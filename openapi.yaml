@@ -1,0 +1,107 @@
+
+info:
+  tittle: API clinica
+  version: 1.0.0
+paths:
+  /users:
+    post:
+      summary: Registrar un nuevo usuario
+      operationId: registerUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/userRegistration'
+        responses:
+          '201':
+            description: Usuario registrado exitosamente
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/userResponse'
+          '400':
+            description: Datos de entrada inválidos
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/errorResponse'
+          '409':
+            description: Correo ya registrado
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/errorResponse'
+          '500':
+            description: Error interno del servidor
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/errorResponse'
+          '503':
+            description: Servicio no disponible
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/errorResponse'
+
+components:
+  schemas:
+    userResponse:
+    type: object
+    properties:
+      id:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      dateBirth:
+        type: string
+        format: date
+      rol:
+        type: string
+    required:
+      - id
+      - email
+      - name
+      - ro
+
+    errorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
+
+    userRegistration:
+      type: object
+      properties:
+        document:
+          type: integer
+        name:
+          type: string
+        lastName:
+          type: string
+        dateBirth:
+          type: string
+          format: date
+        email:
+          type: string
+          format: email
+        number:
+          type: integer
+          format: tel
+        rol:
+          type: string
+          enum:
+            - admin
+            - dentist
+            - receptionist
+            - patient
+          default: patient
