@@ -1,4 +1,4 @@
-package co.edu.uniquindio.agedasdt;
+package co.edu.uniquindio.AgendasDT;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
