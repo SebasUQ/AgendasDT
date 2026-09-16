@@ -1,25 +1,31 @@
 package co.edu.uniquindio.AgendasDT.domain;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
+@Table (name = "TDetail")
+@Entity
 public class TDetail {
 
     //Atributos
-    private Long ID;
-    private Long TreatmentID;
-    private Long MedicineID;
-    private Integer Units;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private UUID ID;
 
-    //Constructor
-    public TDetail(Long ID, Long treatmentID, Long medicineID, Integer units) {
-        this.ID = ID;
-        TreatmentID = treatmentID;
-        MedicineID = medicineID;
-        Units = units;
-    }
+    @ManyToOne
+    @JoinColumn(name = "TreatmentID")
+    private Treatment TreatmentID;
+
+    @ManyToOne
+    @JoinColumn(name = "MedicineID")
+    private Medicine MedicineID;
+
+    private Integer Units;
 
     //Constructor vacio
     public TDetail() {

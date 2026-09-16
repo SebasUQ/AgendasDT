@@ -1,21 +1,22 @@
 package co.edu.uniquindio.AgendasDT.domain;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
+@Table (name = "Treatment")
+@Entity
 public class Treatment {
 
     //Atributos
-    private Long ID;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private UUID ID;
     private String Description;
-
-    //Constructor
-    public Treatment(Long ID, String description) {
-        this.ID = ID;
-        Description = description;
-    }
 
     //Constructor vacio
     public Treatment() {

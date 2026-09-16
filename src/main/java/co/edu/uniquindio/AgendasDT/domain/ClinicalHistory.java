@@ -1,27 +1,33 @@
 package co.edu.uniquindio.AgendasDT.domain;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Getter
 @Setter
+@Table (name = "ClinicalHistory")
+@Entity
 public class ClinicalHistory {
 
     //Atributos
-    private Long ID;
-    private Long PatientID;
-    private Long TreatmentID;
-    private String Diagnosis;
-    private String Observations;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private UUID ID;
 
-    //Constructor
-    public ClinicalHistory(Long ID, Long patientID, Long treatmentID, String diagnosis, String observations) {
-        this.ID = ID;
-        PatientID = patientID;
-        TreatmentID = treatmentID;
-        Diagnosis = diagnosis;
-        Observations = observations;
-    }
+    @ManyToOne
+    @JoinColumn(name = "PatientID")
+    private User PatientID;
+
+    @OneToOne
+    @JoinColumn(name = "TreatmentID")
+    private Treatment TreatmentID;
+
+    private String Diagnosis;
+
+    private String Observations;
 
     //Constructor vacio
     public ClinicalHistory() {

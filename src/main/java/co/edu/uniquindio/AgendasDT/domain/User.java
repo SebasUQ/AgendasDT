@@ -1,34 +1,30 @@
 package co.edu.uniquindio.AgendasDT.domain;
 
 import co.edu.uniquindio.AgendasDT.domain.enums.UserRol;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 
 import java.util.Date;
 
 @Getter
 @Setter
+@Table (name = "User")
+@Entity
 public class User {
 
     //Atributos
+    @Id
     private Long ID;
     private String Name;
     private String LastName;
     private Date BirthDate;
     private String Email;
     private Long Phone;
-    private UserRol Rol;
 
-    //Constructor
-    public User(Long ID, String name, String lastName, Date birthDate, String email, Long phone, UserRol rol) {
-        this.ID = ID;
-        Name = name;
-        LastName = lastName;
-        BirthDate = birthDate;
-        Email = email;
-        Phone = phone;
-        Rol = rol;
-    }
+    @Enumerated(EnumType.STRING)
+    private UserRol Rol;
 
     //Constructor vacio
     public User() {
