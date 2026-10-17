@@ -29,6 +29,22 @@ public class ApiExceptionHandler {
     public ProblemDetail meetingConflict(MeetingConflictException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
     }
+
+    @ExceptionHandler(BillNotFoundException.class)
+    public ProblemDetail billNotFound(BillNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidBillException.class)
+    public ProblemDetail invalidBill(InvalidBillException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(BillConflictException.class)
+    public ProblemDetail billConflict(BillConflictException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+    }
+
     @ExceptionHandler(UserNotFoundException.class)
     public ProblemDetail notFound(UserNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
