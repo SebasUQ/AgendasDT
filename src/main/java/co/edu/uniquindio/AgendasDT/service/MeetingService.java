@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -30,14 +31,16 @@ public class MeetingService {
     private final DentalChairRepository chairs;
     private final MeetingAuditRepository audit;
     private final Clock clock;
+    private final ApplicationEventPublisher events;
 
     public MeetingService(MeetingRepository meetings, UserRepository users, DentalChairRepository chairs,
-                          MeetingAuditRepository audit, Clock clock) {
+                          MeetingAuditRepository audit, Clock clock, ApplicationEventPublisher events) {
         this.meetings = meetings;
         this.users = users;
         this.chairs = chairs;
         this.audit = audit;
         this.clock = clock;
+        this.events = events;
     }
 
     public MeetingResponse create(@Valid MeetingCreateRequest request) {
@@ -55,6 +58,7 @@ public class MeetingService {
         // PostgreSQL exclusion constraints are authoritative when simultaneous requests race.
         meetings.saveAndFlush(meeting);
         recordAudit(meeting, "CREATE");
+        events.publishEvent(new MeetingNotificationEvent(meeting.getId(), NotificationType.Confirmacion));
         return MeetingResponse.from(meeting);
     }
 
@@ -80,6 +84,9 @@ public class MeetingService {
         }
         meetings.flush();
         recordAudit(meeting, "UPDATE");
+        if (rescheduled) {
+            events.publishEvent(new MeetingNotificationEvent(meeting.getId(), NotificationType.Reprogramacion));
+        }
         return MeetingResponse.from(meeting);
     }
 
