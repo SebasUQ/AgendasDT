@@ -7,6 +7,25 @@ La creación y edición de citas para administración y recepción está documen
 La creación, edición y pago de facturas está documentada en [docs/bills.md](docs/bills.md).
 Las notificaciones de citas por correo y SMS están documentadas en [docs/notifications.md](docs/notifications.md).
 
+## Conexión a la base de datos (Supabase)
+
+Crear un archivo `.env` en la raíz del proyecto (está en `.gitignore`; nunca se sube):
+
+```properties
+URL=jdbc:postgresql://<host-del-pooler>.pooler.supabase.com:6543/postgres
+USER=postgres.<referencia-del-proyecto>
+PASS=<contraseña>
+```
+
+Sin comillas ni `;` al final de las líneas. La aplicación lo carga automáticamente
+(`spring.config.import`); las variables de entorno del sistema con el mismo nombre tienen prioridad.
+En macOS/Linux la variable `USER` del sistema ya existe, así que allí se deben exportar los tres valores.
+
+El esquema de Supabase se alineó el 20/10/2026 con las migraciones `001` a `006` (antes tenía las
+tablas antiguas `"User"`, `"Meeting"`, `"Bill"`, `"BillDetail"` con columnas entre comillas, que se
+reemplazaron estando vacías). `006_supabase_rls.sql` activa RLS en las tablas nuevas para que la API
+REST pública de Supabase no las exponga; el backend se conecta como dueño de las tablas y no se ve afectado.
+
 ## Módulo de usuarios: creación y edición
 
 Implementa la administración de los datos de usuarios (HU-02, RN-04).
