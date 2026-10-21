@@ -9,6 +9,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,6 +25,7 @@ class MeetingServiceTests {
     @Mock UserRepository users;
     @Mock DentalChairRepository chairs;
     @Mock MeetingAuditRepository audit;
+    @Mock ApplicationEventPublisher events;
     private final Instant now = Instant.parse("2026-10-14T15:00:00Z");
     private final UUID id = UUID.fromString("00000000-0000-4000-8000-000000000001");
     private final OffsetDateTime start = OffsetDateTime.parse("2026-10-15T09:00:00-05:00");
@@ -32,7 +34,7 @@ class MeetingServiceTests {
 
     @BeforeEach
     void setup() {
-        service = new MeetingService(meetings, users, chairs, audit, Clock.fixed(now, ZoneOffset.UTC));
+        service = new MeetingService(meetings, users, chairs, audit, Clock.fixed(now, ZoneOffset.UTC), events);
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken("reception", "unused", List.of()));
     }
@@ -60,6 +62,7 @@ class MeetingServiceTests {
         assertEquals("reception", entry.getValue().getActor());
         assertEquals("CREATE", entry.getValue().getAction());
         assertEquals(now, entry.getValue().getOccurredAt());
+        verify(events).publishEvent(new MeetingNotificationEvent(id, NotificationType.Confirmacion));
     }
 
     @Test
@@ -142,7 +145,7 @@ class MeetingServiceTests {
         resources();
         when(meetings.saveAndFlush(any())).thenThrow(new DataIntegrityViolationException("exclusion violation"));
         assertThrows(DataIntegrityViolationException.class, () -> service.create(create(start, end)));
-        verifyNoInteractions(audit);
+        verifyNoInteractions(audit, events);
     }
 
     @Test
@@ -160,6 +163,7 @@ class MeetingServiceTests {
         verify(meetings).overlaps(eq(id), anyCollection(), eq(start.plusHours(2).toInstant()),
                 eq(end.plusHours(2).toInstant()), eq(1L), eq(2L), eq(3L));
         verify(audit).save(any());
+        verify(events).publishEvent(new MeetingNotificationEvent(id, NotificationType.Reprogramacion));
     }
 
     @Test
@@ -169,6 +173,7 @@ class MeetingServiceTests {
         when(users.findById(2L)).thenReturn(Optional.of(user(2L, UserRol.Odontologo)));
         when(chairs.findById(3L)).thenReturn(Optional.of(chair()));
         assertEquals(MeetingStatus.Confirmada, service.update(id, update(start, end, 0L)).status());
+        verifyNoInteractions(events);
     }
 
     @Test
@@ -178,7 +183,7 @@ class MeetingServiceTests {
         assertThrows(MeetingConflictException.class, () -> service.update(id, update(start, end, 2L)));
         assertEquals(MeetingStatus.Confirmada, meeting.getStatus());
         verify(meetings, never()).flush();
-        verifyNoInteractions(users, chairs, audit);
+        verifyNoInteractions(users, chairs, audit, events);
     }
 
     @Test
@@ -212,7 +217,7 @@ class MeetingServiceTests {
                 () -> service.update(id, update(start.plusHours(1), end.plusHours(1), 0L)));
         assertEquals(start.toInstant(), meeting.getStartsAt());
         verify(meetings, never()).flush();
-        verifyNoInteractions(audit);
+        verifyNoInteractions(audit, events);
     }
 
     @Test
