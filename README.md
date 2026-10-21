@@ -4,6 +4,8 @@ Java 21, Spring Boot, Maven y PostgreSQL. Desarrollo por tareas de Jira.
 
 La creación y edición de citas para administración y recepción está documentada en
 [docs/meetings.md](docs/meetings.md).
+La creación, edición y pago de facturas está documentada en [docs/bills.md](docs/bills.md).
+Las notificaciones de citas por correo y SMS están documentadas en [docs/notifications.md](docs/notifications.md).
 
 ## Módulo de usuarios: creación y edición
 
