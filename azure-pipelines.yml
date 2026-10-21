@@ -1,23 +1,21 @@
 trigger:
-  - main
+  - master
 pool:
   vmImage: 'ubuntu-latest'
-  variables:
-    # Conexión ARM para la gestión de App Service
-    azureARMConnection: 'azure-connection'
-    # Conexión Docker Registry para autenticar con ACR
-    dockerRegistryConnection: 'docker-registry-connection'
-    # Servidor del registro de contenedores (ACR)
-    containerRegistry: 'acrapidoctooth.azurecr.io'
-    # Nombre del repositorio dentro de ACR
+variables:
+  # Conexión ARM para la gestión de App Service
+  azureARMConnection: 'azure-connection'
+  # Conexión Docker Registry para autenticar con ACR
+  dockerRegistryConnection: 'docker-registry-connection'
+  # Servidor del registro de contenedores (ACR)
+  containerRegistry: 'acrapidoctooth.azurecr.io'
+  # Nombre del repositorio dentro de ACR
 
-    Automatización de Despliegues: Integración Continua y Despliegue Continuo (CI/CD) con Azure DevOps 15
-
-    imageRepository: 'api-doctooth'
-    # Nombre de tu Azure App Service
-    webAppName: 'api-doctooth-prod'
-    # Etiqueta de la imagen Docker basada en el ID de compilación
-    tag: '$(Build.BuildId)'
+  imageRepository: 'api-doctooth'
+  # Nombre de tu Azure App Service
+  webAppName: 'api-doctooth-prod'
+  # Etiqueta de la imagen Docker basada en el ID de compilación
+  tag: '$(Build.BuildId)'
 stages:
   - stage: BuildAndPush
     displayName: 'Compilar e Impulsar Imagen Docker a ACR'
