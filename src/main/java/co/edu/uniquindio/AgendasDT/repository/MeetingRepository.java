@@ -8,8 +8,13 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
+    Page<Meeting> findByDoctor_IdOrderByStartsAtAscIdAsc(Long doctorId, Pageable pageable);
+
+    Page<Meeting> findByDoctor_IdAndPatient_IdOrderByStartsAtAscIdAsc(Long doctorId, Long patientId, Pageable pageable);
     @Query("""
             select count(m) > 0 from Meeting m
             where m.id <> :excludedId and m.status in :statuses

@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verifyNoInteractions;
 
-@SpringJUnitConfig({UserService.class, MethodSecurityConfig.class})
+@SpringJUnitConfig({UserService.class, MethodSecurityConfig.class, co.edu.uniquindio.AgendasDT.config.PasswordConfig.class})
 class UserAuthorizationTests {
     @Autowired UserService service;
     @MockitoBean UserRepository users;

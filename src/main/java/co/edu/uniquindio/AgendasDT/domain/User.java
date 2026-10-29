@@ -4,6 +4,7 @@ import co.edu.uniquindio.AgendasDT.domain.enums.UserRol;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 import java.time.LocalDate;
@@ -28,6 +29,10 @@ public class User {
     private String email;
     @Column(name = "Phone", nullable = false, length = 20)
     private String phone;
+
+    @JsonIgnore
+    @Column(name = "password_hash", length = 255)
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "Rol", nullable = false)

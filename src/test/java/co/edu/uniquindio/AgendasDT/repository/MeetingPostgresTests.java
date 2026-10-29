@@ -33,7 +33,8 @@ class MeetingPostgresTests {
         try (Connection connection = connect(); Statement sql = connection.createStatement()) {
             sql.execute("CREATE SCHEMA " + schema);
             sql.execute("SET search_path TO " + schema + ", public");
-            for (String migration : List.of("001_users.sql", "002_meetings_structure.sql", "003_meetings_constraints.sql")) {
+            for (String migration : List.of("001_users.sql", "002_meetings_structure.sql", "003_meetings_constraints.sql",
+                    "007_user_passwords_meeting_access.sql")) {
                 sql.execute(Files.readString(Path.of("database", migration)));
             }
         }

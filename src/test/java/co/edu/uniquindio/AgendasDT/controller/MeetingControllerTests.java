@@ -134,21 +134,23 @@ class MeetingControllerTests {
 
     @Test
     @WithMockUser(roles = "Paciente")
-    void patientCannotCreateReadOrEditThroughStaffApi() throws Exception {
+    void patientCanReachMeetingRoutesWithOwnershipEnforcedByService() throws Exception {
+        when(service.create(any())).thenReturn(response());
+        when(service.update(eq(ID), any())).thenReturn(response());
+        when(service.get(ID)).thenReturn(response());
         mvc.perform(post("/api/meetings").with(csrf()).contentType("application/json").content(CREATE))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isCreated());
         mvc.perform(put("/api/meetings/" + ID).with(csrf()).contentType("application/json").content(UPDATE))
-                .andExpect(status().isForbidden());
-        mvc.perform(get("/api/meetings/" + ID)).andExpect(status().isForbidden());
-        verifyNoInteractions(service);
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/meetings/" + ID)).andExpect(status().isOk());
     }
 
     @Test
     @WithMockUser(roles = "Odontologo")
-    void dentistCannotAdministerMeetings() throws Exception {
+    void dentistCanReachMeetingRoutes() throws Exception {
+        when(service.create(any())).thenReturn(response());
         mvc.perform(post("/api/meetings").with(csrf()).contentType("application/json").content(CREATE))
-                .andExpect(status().isForbidden());
-        verifyNoInteractions(service);
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -169,5 +171,38 @@ class MeetingControllerTests {
         return new MeetingResponse(ID, ID.toString(), 1L, 2L, 3L,
                 Instant.parse("2030-01-10T14:00:00Z"), Instant.parse("2030-01-10T15:00:00Z"),
                 "Control", MeetingStatus.Pendiente, 0L);
+    }
+
+    @Test
+    @WithMockUser(roles = "Odontologo")
+    void listsDoctorMeetingsWithPagination() throws Exception {
+        when(service.listByDoctor(2L, 0, 20)).thenReturn(new co.edu.uniquindio.AgendasDT.dto.MeetingListResponse(
+                java.util.List.of(response()), 0, 20, 1, 1));
+        mvc.perform(get("/api/meetings/doctors/2"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.content[0].doctorId").value(2))
+                .andExpect(jsonPath("$.totalElements").value(1));
+    }
+
+    @Test
+    @WithMockUser(roles = "Paciente")
+    void changesStatusThroughDedicatedRoute() throws Exception {
+        when(service.changeStatus(eq(ID), any())).thenReturn(response());
+        mvc.perform(patch("/api/meetings/" + ID + "/status").with(csrf()).contentType("application/json")
+                        .content("{\"status\":\"Confirmada\",\"version\":0}"))
+                .andExpect(status().isOk());
+        verify(service).changeStatus(ID, new co.edu.uniquindio.AgendasDT.dto.MeetingStatusRequest(MeetingStatus.Confirmada, 0L));
+    }
+
+    @Test
+    @WithMockUser(roles = "Recepcionista")
+    void validatesPaginationAndStatusRequest() throws Exception {
+        mvc.perform(get("/api/meetings/doctors/2?page=-1&size=101")).andExpect(status().isBadRequest());
+        mvc.perform(patch("/api/meetings/" + ID + "/status").with(csrf()).contentType("application/json")
+                        .content("{\"status\":\"INVALID\",\"version\":0}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(patch("/api/meetings/" + ID + "/status").with(csrf()).contentType("application/json")
+                        .content("{\"status\":\"Confirmada\"}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(service);
     }
 }

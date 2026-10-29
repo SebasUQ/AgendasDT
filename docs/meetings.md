@@ -1,8 +1,8 @@
 # Creación y edición de citas
 
-Entrega para **Administrador y Recepcionista**, según el alcance acordado.
-El autoservicio del paciente, cancelación, confirmación por enlace, sala de espera,
-recordatorios y reglas de inasistencia pertenecen a tareas posteriores.
+Acceso para **Administrador, Recepcionista, Odontologo y Paciente** con restricciones por identidad.
+La confirmación por enlace, sala de espera y reglas de inasistencia no forman parte de esta entrega.
+Las notificaciones existentes continúan funcionando; el despachador descarta mensajes de citas canceladas.
 
 ## API
 
@@ -11,13 +11,21 @@ recordatorios y reglas de inasistencia pertenecen a tareas posteriores.
 | POST | `/api/meetings` | 201, cita creada y encabezado Location |
 | GET | `/api/meetings/{uuid}` | 200, datos y versión para editar |
 | PUT | `/api/meetings/{uuid}` | 200, cita actualizada |
+| GET | `/api/meetings/doctors/{doctorId}?page=0&size=20` | 200, lista paginada de citas asignadas |
+| PATCH | `/api/meetings/{uuid}/status` | 200, cambio de estado |
 
-Las tres operaciones exigen `ROLE_Administrador` o `ROLE_Recepcionista`, tanto en
-el controlador como en el servicio. Se conservan HTTP Basic, sesión y protección CSRF
-actuales. Obtener el token con `GET /api/csrf`, conservar su cookie de sesión y enviarlo
-en el encabezado indicado al crear o editar. Consultar la preparación de autenticación
-local en el README. Para recepción, configurar `SPRING_SECURITY_USER_ROLES=Recepcionista`.
-La autenticación con las cuentas de PostgreSQL sigue pendiente de su propia tarea.
+Las operaciones admiten las cuatro autoridades `ROLE_Administrador`, `ROLE_Recepcionista`,
+`ROLE_Odontologo` y `ROLE_Paciente`, tanto en controlador como en servicio.
+Administrador y recepción gestionan todas las citas. El odontólogo solo gestiona citas asignadas
+a él y no puede reasignarlas a otro profesional. El paciente solo crea, consulta o modifica sus
+propias citas y no puede marcarlas como completadas.
+
+Para los roles de paciente y odontólogo, `Authentication.getName()` debe ser el correo del usuario
+persistido (se normalizan mayúsculas y espacios). El rol autenticado debe coincidir con el almacenado.
+Una identidad sin correspondencia recibe 403; nunca se acepta el ID enviado en la solicitud como prueba
+de identidad. Este contrato queda listo para el módulo de autenticación; añadir `password_hash` no
+implementa un login. El perfil `demo` conserva su administrador en memoria y su configuración previa.
+Fuera de ese perfil, se conserva CSRF: obtener el token con `GET /api/csrf` y conservar su cookie.
 
 ### Creación
 
@@ -63,8 +71,9 @@ PUT exige todos los campos editables. El ID de la cita y el paciente son inmutab
 Solo se editan citas pendientes o confirmadas que aún no hayan comenzado.
 Cambiar horario, odontólogo o sillón devuelve el estado a `Pendiente`; cambiar únicamente
 el motivo conserva el estado. El cliente no puede asignar estados mediante estos contratos.
-Administración y recepción pueden reprogramar con menos de 24 horas de antelación:
-RN-01 restringe el autoservicio del paciente, que no está habilitado en esta entrega.
+Administración y recepción pueden reprogramar con menos de 24 horas de antelación.
+El paciente necesita al menos 24 horas de anticipación respecto al inicio actual para editar
+o cancelar, conforme a RN-01; exactamente 24 horas sí se permite. La confirmación no exige esa anticipación.
 
 Si otro operador modifica la cita, se devuelve 409. Volver a consultar y revisar los cambios
 antes de reenviar una edición; no sobrescribir la versión automáticamente.
@@ -83,6 +92,7 @@ La consulta de agenda laboral del odontólogo, horarios de apertura y filtros po
 no se implementan aquí; requieren el modelo de disponibilidad de la tarea correspondiente.
 
 Cada operación registra cita, actor autenticado, acción y fecha/hora UTC en `meeting_audit`.
+Se guardan además el estado anterior y el nuevo en las operaciones de cambio.
 La cita y su auditoría se guardan en la misma transacción. El motivo no se copia en la bitácora.
 
 Errores de negocio: 400 (horario/datos/roles de recursos inválidos), 404 (cita o recurso inexistente),
@@ -99,6 +109,9 @@ antes de usar los endpoints, después de revisar una copia del esquema existente
 3. Registrar los sillones reales en `dental_chair` con sus ID, nombre y estado.
 4. Si hay citas antiguas, completar `ends_at`, `chair_id` y `reason` con información verificada.
 5. Revisar y resolver solapamientos existentes; aplicar **una vez** `database/003_meetings_constraints.sql`.
+6. Para esta actualización, aplicar `database/007_user_passwords_meeting_access.sql`
+   después de las migraciones previas del proyecto. Agrega columnas de contraseña y auditoría
+   e índices para consultar la agenda; no modifica el estado de las citas existentes.
 
 El mapeo conserva la tabla original sin comillas `meeting` y las columnas `id`, `patientid`,
 `doctorid`, `date` y `status`. Si la base utiliza `"Meeting"` o columnas entrecomilladas con
@@ -136,5 +149,6 @@ Crean y eliminan un esquema temporal exclusivo con nombre aleatorio y aplican lo
 El usuario de pruebas necesita permisos para crear esquemas y acceso a `btree_gist`.
 No usar las credenciales de producción. Si no se configuran esas variables, las pruebas se omiten.
 
-La prueba original `contextLoads` sigue dependiendo de una base configurada y de los mapeos
-de los otros módulos, que no se han modificado en esta entrega.
+La suite completa se ejecuta con `.\mvnw.cmd test`; `contextLoads` usa H2 mediante el perfil `test`.
+El contrato de contraseñas, la identidad por correo y los cambios de estado se explican con ejemplos
+en [user-passwords-and-meeting-status.md](user-passwords-and-meeting-status.md).

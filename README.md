@@ -2,10 +2,12 @@
 
 Java 21, Spring Boot, Maven y PostgreSQL. Desarrollo por tareas de Jira.
 
-La creación y edición de citas para administración y recepción está documentada en
+La gestión de citas con permisos por rol está documentada en
 [docs/meetings.md](docs/meetings.md).
 La creación, edición y pago de facturas está documentada en [docs/bills.md](docs/bills.md).
 Las notificaciones de citas por correo y SMS están documentadas en [docs/notifications.md](docs/notifications.md).
+La ampliación de contraseñas, permisos y estados está detallada en
+[docs/user-passwords-and-meeting-status.md](docs/user-passwords-and-meeting-status.md).
 
 ## Conexión a la base de datos (Supabase)
 
@@ -29,7 +31,11 @@ REST pública de Supabase no las exponga; el backend se conecta como dueño de l
 ## Módulo de usuarios: creación y edición
 
 Implementa la administración de los datos de usuarios (HU-02, RN-04).
-El módulo de autenticación con cuentas persistidas y contraseñas corresponde a una tarea separada.
+El módulo acepta `password` opcional en creación y edición y guarda únicamente su hash BCrypt
+en `password_hash`. Omitirlo al editar conserva el hash anterior; las respuestas nunca incluyen
+la contraseña ni su hash. El inicio de sesión con estas credenciales sigue siendo una tarea separada.
+Aplicar primero `database/007_user_passwords_meeting_access.sql` para agregar la columna sin
+alterar las cuentas existentes. Estas conservan un hash nulo hasta que se les asigne una contraseña.
 No se habilita registro público, eliminación ni inactivación en esta entrega.
 
 Capas: `controller` → `service` → `repository`, con contratos en `dto`, entidades en `domain`
@@ -94,7 +100,8 @@ Creación:
 ```
 
 El ID se recibe como entero positivo, siguiendo el modelo existente, y no se puede cambiar.
-Todos los campos son obligatorios. Nombres: hasta 100 caracteres; correo válido: hasta 254;
+Los campos del ejemplo son obligatorios; el campo adicional `password` es opcional.
+Nombres: hasta 100 caracteres; correo válido: hasta 254;
 teléfono: de 7 a 15 dígitos y prefijo `+` opcional. Se conservan ceros iniciales.
 Fecha de nacimiento en formato ISO, anterior a hoy.
 Roles admitidos: `Administrador`, `Odontologo`, `Recepcionista`, `Paciente`.
@@ -125,9 +132,10 @@ La bitácora no almacena copias de los datos personales ni acepta actor/fecha de
 
 Cubren validación HTTP, duplicados, edición, auditoría, versiones obsoletas, autenticación,
 CSRF y denegación por rol. No requieren una base externa: usan repositorios simulados.
-La prueba original `contextLoads` requiere una PostgreSQL configurada y el esquema completo
-del proyecto. Las entidades de otros módulos todavía tienen problemas de mapeo identificados
-en la revisión inicial; no fueron modificadas en esta tarea.
+Para ejecutar toda la suite, usar `.\mvnw.cmd test`. `contextLoads` y la prueba de persistencia
+de usuarios/citas usan H2 con el perfil `test`. Las pruebas PostgreSQL se omiten si faltan
+sus variables de conexión. Otros módulos todavía generan advertencias UUID/IDENTITY al crear
+tablas en H2; esos mapeos anteriores no se han modificado en esta tarea.
 
 Antes de integrar en un entorno compartido, verificar sobre PostgreSQL el esquema real,
 el índice único, la persistencia y la reversión de ambas escrituras ante un error de auditoría.

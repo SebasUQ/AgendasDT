@@ -30,7 +30,7 @@ class UserServiceTests {
 
     @BeforeEach
     void setup() {
-        service = new UserService(users, audit);
+        service = new UserService(users, audit, new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder(4));
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken("admin", "unused", List.of()));
     }
@@ -117,6 +117,48 @@ class UserServiceTests {
         assertThrows(UserConflictException.class, () -> service.update(123L, updateRequest(9L)));
         assertEquals(UserRol.Paciente, user.getRol());
         verify(users, never()).flush();
+        verifyNoInteractions(audit);
+    }
+
+    @Test
+    void storesOnlyHashWhenCreatingWithPassword() {
+        var request = new UserCreateRequest(123L, "Ana", "Perez", LocalDate.of(1995, 5, 12),
+                "ana@example.com", "+573001234567", UserRol.Paciente, "Test-password-123");
+        service.create(request);
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+        verify(users).saveAndFlush(saved.capture());
+        String hash = saved.getValue().getPasswordHash();
+        assertNotEquals(request.password(), hash);
+        assertTrue(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().matches(request.password(), hash));
+        assertFalse(request.toString().contains(request.password()));
+    }
+
+    @Test
+    void editWithoutPasswordPreservesExistingHash() {
+        User user = existingUser();
+        user.setPasswordHash("existing-hash");
+        when(users.findById(123L)).thenReturn(Optional.of(user));
+        service.update(123L, updateRequest(0L));
+        assertEquals("existing-hash", user.getPasswordHash());
+    }
+
+    @Test
+    void editsPasswordByEncodingNewValue() {
+        User user = existingUser();
+        user.setPasswordHash("old-hash");
+        when(users.findById(123L)).thenReturn(Optional.of(user));
+        service.update(123L, new UserUpdateRequest("Ana", "Perez", LocalDate.of(1995, 5, 12),
+                "ana@example.com", "+573001234567", UserRol.Paciente, 0L, "Updated-password-123"));
+        assertTrue(new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
+                .matches("Updated-password-123", user.getPasswordHash()));
+    }
+
+    @Test
+    void rejectsOversizedUtf8PasswordBeforeWriting() {
+        var request = new UserCreateRequest(123L, "Ana", "Perez", LocalDate.of(1995, 5, 12),
+                "ana@example.com", "+573001234567", UserRol.Paciente, "é".repeat(37));
+        assertThrows(InvalidUserException.class, () -> service.create(request));
+        verify(users, never()).saveAndFlush(any());
         verifyNoInteractions(audit);
     }
 

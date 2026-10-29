@@ -15,6 +15,10 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(InvalidUserException.class)
+    public ProblemDetail invalidUser(InvalidUserException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
     @ExceptionHandler(MeetingNotFoundException.class)
     public ProblemDetail meetingNotFound(MeetingNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());

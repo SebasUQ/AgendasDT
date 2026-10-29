@@ -16,6 +16,8 @@ import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Objects;
+import java.nio.charset.StandardCharsets;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 @Validated
@@ -24,10 +26,12 @@ import java.util.Objects;
 public class UserService {
     private final UserRepository users;
     private final UserAuditRepository audit;
+    private final PasswordEncoder passwords;
 
-    public UserService(UserRepository users, UserAuditRepository audit) {
+    public UserService(UserRepository users, UserAuditRepository audit, PasswordEncoder passwords) {
         this.users = users;
         this.audit = audit;
+        this.passwords = passwords;
     }
 
     public UserResponse create(@Valid UserCreateRequest request) {
@@ -40,6 +44,7 @@ public class UserService {
         }
         User user = new User();
         user.setId(request.id());
+        setPassword(user, request.password());
         apply(user, request.name(), request.lastName(), request.birthDate(), email, request.phone(), request.rol());
         // Null version makes Spring Data treat this assigned-ID entity as new (persist, not merge).
         users.saveAndFlush(user);
@@ -57,6 +62,7 @@ public class UserService {
             throw new UserConflictException("El correo ya está registrado.");
         }
         UserRol previousRole = user.getRol();
+        setPassword(user, request.password());
         apply(user, request.name(), request.lastName(), request.birthDate(), email, request.phone(), request.rol());
         users.flush();
         audit.save(new UserAudit(id, actor(), "UPDATE", previousRole, user.getRol()));
@@ -84,6 +90,14 @@ public class UserService {
 
     private String normalizeEmail(String email) {
         return email.strip().toLowerCase(Locale.ROOT);
+    }
+
+    private void setPassword(User user, String password) {
+        if (password == null) { return; }
+        if (password.isBlank() || password.length() < 8 || password.getBytes(StandardCharsets.UTF_8).length > 72) {
+            throw new InvalidUserException("La contraseña debe tener al menos 8 caracteres y no superar 72 bytes UTF-8.");
+        }
+        user.setPasswordHash(passwords.encode(password));
     }
 
     private String actor() {

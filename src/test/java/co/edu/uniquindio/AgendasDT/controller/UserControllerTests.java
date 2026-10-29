@@ -134,4 +134,26 @@ class UserControllerTests {
         return new UserResponse(123L, "Ana", "Perez", LocalDate.of(1995, 5, 12),
                 "ana@example.com", "+573001234567", UserRol.Paciente, 0L);
     }
+
+    @Test
+    @WithMockUser(roles = "Administrador")
+    void acceptsPasswordWithoutReturningCredentials() throws Exception {
+        when(service.create(any())).thenReturn(response());
+        mvc.perform(post("/api/users").with(csrf()).contentType("application/json")
+                        .content(CREATE.replace("\"rol\":\"Paciente\"", "\"rol\":\"Paciente\",\"password\":\"Example-password-123\"")))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.passwordHash").doesNotExist());
+        var captured = org.mockito.ArgumentCaptor.forClass(UserCreateRequest.class);
+        verify(service).create(captured.capture());
+        org.junit.jupiter.api.Assertions.assertEquals("Example-password-123", captured.getValue().password());
+    }
+
+    @Test
+    @WithMockUser(roles = "Administrador")
+    void rejectsWeakPassword() throws Exception {
+        mvc.perform(post("/api/users").with(csrf()).contentType("application/json")
+                        .content(CREATE.replace("\"rol\":\"Paciente\"", "\"rol\":\"Paciente\",\"password\":\"short\"")))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.password").exists());
+        verifyNoInteractions(service);
+    }
 }

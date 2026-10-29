@@ -36,7 +36,8 @@ class MeetingServiceTests {
     void setup() {
         service = new MeetingService(meetings, users, chairs, audit, Clock.fixed(now, ZoneOffset.UTC), events);
         SecurityContextHolder.getContext().setAuthentication(
-                new UsernamePasswordAuthenticationToken("reception", "unused", List.of()));
+                new UsernamePasswordAuthenticationToken("reception", "unused",
+                        List.of(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_Recepcionista"))));
     }
 
     @AfterEach

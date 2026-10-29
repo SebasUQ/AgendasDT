@@ -51,6 +51,6 @@ class MeetingAuthorizationTests {
         assertThrows(AccessDeniedException.class, () -> service.create(create));
         assertThrows(AccessDeniedException.class, () -> service.update(UUID.randomUUID(), update));
         assertThrows(AccessDeniedException.class, () -> service.get(UUID.randomUUID()));
-        verifyNoInteractions(meetings, users, chairs, audit);
+        verifyNoInteractions(meetings, chairs, audit);
     }
 }
