@@ -1,21 +1,22 @@
 # Creación y edición de facturas
 
 Entrega de **SCRUM-16** para **Administrador y Recepcionista** (Proceso 3: facturación de la atención).
-Esta tarea implementa la lógica de negocio en `BillService`. Los endpoints REST se exponen en SCRUM-24.
+La lógica de negocio está en `BillService` y los endpoints REST en `BillController` (SCRUM-24).
 Los abonos parciales, la anulación, el descuento automático de inventario, las tarifas fijas por
 tratamiento y el envío del comprobante por correo pertenecen a tareas posteriores.
 
-## Operaciones del servicio
+## API
 
-| Operación | Resultado |
-| --- | --- |
-| `create` | Crea la factura de una cita en estado `Pendiente` |
-| `get` / `getByMeeting` | Consulta por ID de factura o por ID de cita, con la versión para editar |
-| `update` | Reemplaza todas las líneas y recalcula el total |
-| `pay` | Registra el método de pago y pasa la factura a `Pagada` |
+| Método | Ruta | Servicio | Resultado |
+| --- | --- | --- | --- |
+| POST | `/api/bills` | `create` | 201, factura `Pendiente` y encabezado Location |
+| GET | `/api/bills/{id}` | `get` | 200, factura con su versión para editar |
+| GET | `/api/bills/meeting/{meetingId}` | `getByMeeting` | 200, factura de esa cita |
+| PUT | `/api/bills/{id}` | `update` | 200, reemplaza todas las líneas y recalcula el total |
+| POST | `/api/bills/{id}/payment` | `pay` | 200, registra el método de pago y pasa a `Pagada` |
 
-Todas exigen `ROLE_Administrador` o `ROLE_Recepcionista`. Como en citas y usuarios, la autorización
-se aplica en el servicio, de modo que también protege llamadas internas.
+Todas exigen `ROLE_Administrador` o `ROLE_Recepcionista`, tanto en el controlador como en el servicio,
+de modo que también se protegen las llamadas internas. Sin autenticación se responde 401 y con otro rol 403.
 
 ### Creación
 

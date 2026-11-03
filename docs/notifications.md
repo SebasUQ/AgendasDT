@@ -3,7 +3,7 @@
 Entrega de **SCRUM-17**: confirmaciones, avisos de reprogramación y recordatorios por **correo y SMS**
 para reducir el ausentismo (Proceso 1 del documento del proyecto).
 El envío es **simulado**: los mensajes se escriben en el log de la aplicación y no se conecta
-ningún proveedor real. La consulta por API se expone en SCRUM-24.
+ningún proveedor real. La consulta por API se expone en `NotificationController` (SCRUM-24).
 
 ## Cuándo se genera cada aviso
 
@@ -44,9 +44,14 @@ no afecta el agendamiento.
 
 ## Consulta
 
-`NotificationService.listByMeeting(meetingId)` devuelve los avisos de una cita (tipo, canal, destinatario,
-mensaje, estado, intentos, fechas y último error). Exige `ROLE_Administrador` o `ROLE_Recepcionista`;
-si la cita no existe se lanza `MeetingNotFoundException` (404). Los procesos automáticos no requieren usuario.
+```text
+GET /api/meetings/{meetingId}/notifications
+```
+
+Llama a `NotificationService.listByMeeting` y devuelve los avisos de una cita (tipo, canal, destinatario,
+mensaje, estado, intentos, fechas y último error); una cita sin avisos devuelve `[]`.
+Exige `ROLE_Administrador` o `ROLE_Recepcionista`; si la cita no existe responde 404.
+Los procesos automáticos no requieren usuario.
 
 ## Configuración
 
