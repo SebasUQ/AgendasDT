@@ -8,6 +8,8 @@ La creación, edición y pago de facturas está documentada en [docs/bills.md](d
 Las notificaciones de citas por correo y SMS están documentadas en [docs/notifications.md](docs/notifications.md).
 La ampliación de contraseñas, permisos y estados está detallada en
 [docs/user-passwords-and-meeting-status.md](docs/user-passwords-and-meeting-status.md).
+El inicio de sesión con token (login, registro de pacientes y configuración) está en
+[docs/authentication.md](docs/authentication.md).
 
 ## Conexión a la base de datos (Supabase)
 
@@ -17,6 +19,7 @@ Crear un archivo `.env` en la raíz del proyecto (está en `.gitignore`; nunca s
 URL=jdbc:postgresql://<host-del-pooler>.pooler.supabase.com:6543/postgres
 USER=postgres.<referencia-del-proyecto>
 PASS=<contraseña>
+JWT_SECRET=<clave aleatoria de al menos 32 caracteres>
 ```
 
 Sin comillas ni `;` al final de las líneas. La aplicación lo carga automáticamente
@@ -33,10 +36,10 @@ REST pública de Supabase no las exponga; el backend se conecta como dueño de l
 Implementa la administración de los datos de usuarios (HU-02, RN-04).
 El módulo acepta `password` opcional en creación y edición y guarda únicamente su hash BCrypt
 en `password_hash`. Omitirlo al editar conserva el hash anterior; las respuestas nunca incluyen
-la contraseña ni su hash. El inicio de sesión con estas credenciales sigue siendo una tarea separada.
+la contraseña ni su hash. El inicio de sesión con estas credenciales está en `docs/authentication.md`.
 Aplicar primero `database/007_user_passwords_meeting_access.sql` para agregar la columna sin
 alterar las cuentas existentes. Estas conservan un hash nulo hasta que se les asigne una contraseña.
-No se habilita registro público, eliminación ni inactivación en esta entrega.
+El registro público solo crea pacientes (`POST /api/auth/register`); no hay eliminación ni inactivación.
 
 Capas: `controller` → `service` → `repository`, con contratos en `dto`, entidades en `domain`
 y errores de API en `exception`. Las entidades no se exponen directamente como JSON.
@@ -62,19 +65,12 @@ Crear, consultar y editar requieren la autoridad `ROLE_Administrador`.
 La autorización se aplica en el servicio para proteger también otras llamadas internas.
 El rol enviado en el cuerpo identifica al usuario administrado; no concede permisos al solicitante.
 
-Se conserva la autenticación y protección CSRF predeterminadas de Spring Security.
-Mientras se desarrolla la autenticación del proyecto, para pruebas locales se puede configurar
-el usuario en memoria de Spring mediante `SPRING_SECURITY_USER_NAME`,
-`SPRING_SECURITY_USER_PASSWORD` y `SPRING_SECURITY_USER_ROLES=Administrador`.
-Esta cuenta local no equivale a las cuentas creadas en PostgreSQL. No usar esta configuración
-como autenticación de producción ni guardar credenciales en el repositorio.
+La autenticación usa tokens JWT (ver `docs/authentication.md`). En Postman u otro cliente:
 
-En Postman u otro cliente:
+1. Iniciar sesión con `POST /api/auth/login` (correo y contraseña de una cuenta con rol `Administrador`).
+2. Enviar el token recibido en el encabezado `Authorization: Bearer <token>` de cada petición.
 
-1. Configurar HTTP Basic con las credenciales locales.
-2. Consultar `GET /api/csrf`; devuelve `headerName` y `token`.
-3. Conservar la cookie de sesión recibida y enviar el token en el encabezado indicado para POST y PUT.
-   Postman conserva las cookies automáticamente. Un token sin su cookie de sesión no es suficiente.
+No se usan sesiones, cookies ni CSRF.
 
 ### API
 
@@ -83,7 +79,6 @@ En Postman u otro cliente:
 | POST | `/api/users` | Crea usuario, devuelve 201 y encabezado Location |
 | GET | `/api/users/{id}` | Consulta los datos y la versión para editar |
 | PUT | `/api/users/{id}` | Reemplaza los datos editables, devuelve 200 |
-| GET | `/api/csrf` | Obtiene un token CSRF para la sesión autenticada |
 
 Creación:
 
@@ -115,8 +110,8 @@ El correo se guarda en minúsculas y los nombres se guardan sin espacios en los 
 La búsqueda de duplicados ignora mayúsculas y espacios exteriores de los correos existentes.
 Un índice único en PostgreSQL protege contra creaciones/ediciones concurrentes con el mismo correo.
 
-Errores: 400 para datos inválidos, 401 para falta de autenticación, 403 para permisos insuficientes
-o CSRF inválido, 404 para usuario inexistente y 409 para duplicados o conflictos de edición.
+Errores: 400 para datos inválidos, 401 para token ausente o inválido, 403 para permisos insuficientes,
+404 para usuario inexistente y 409 para duplicados o conflictos de edición.
 Los errores de negocio/validación usan ProblemDetail; los errores de seguridad los procesa
 la cadena de filtros predeterminada de Spring Security. No se devuelven detalles de SQL.
 
@@ -130,8 +125,8 @@ La bitácora no almacena copias de los datos personales ni acepta actor/fecha de
 .\mvnw.cmd '-Dtest=UserServiceTests,UserControllerTests,UserAuthorizationTests' test
 ```
 
-Cubren validación HTTP, duplicados, edición, auditoría, versiones obsoletas, autenticación,
-CSRF y denegación por rol. No requieren una base externa: usan repositorios simulados.
+Cubren validación HTTP, duplicados, edición, auditoría, versiones obsoletas, autenticación
+y denegación por rol. No requieren una base externa: usan repositorios simulados.
 Para ejecutar toda la suite, usar `.\mvnw.cmd test`. `contextLoads` y la prueba de persistencia
 de usuarios/citas usan H2 con el perfil `test`. Las pruebas PostgreSQL se omiten si faltan
 sus variables de conexión. Otros módulos todavía generan advertencias UUID/IDENTITY al crear

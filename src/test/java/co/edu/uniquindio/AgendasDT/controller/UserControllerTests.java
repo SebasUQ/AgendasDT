@@ -14,7 +14,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.mock.web.MockHttpSession;
 import java.time.LocalDate;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -22,7 +21,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest({UserController.class, CsrfController.class})
+@WebMvcTest(UserController.class)
 @Import({MethodSecurityConfig.class, ApiExceptionHandler.class})
 class UserControllerTests {
     @Autowired MockMvc mvc;
@@ -97,14 +96,6 @@ class UserControllerTests {
     }
 
     @Test
-    @WithMockUser(roles = "Administrador")
-    void preservesCsrfProtection() throws Exception {
-        mvc.perform(post("/api/users").contentType("application/json").content(CREATE))
-                .andExpect(status().isForbidden());
-        verifyNoInteractions(service);
-    }
-
-    @Test
     @WithMockUser(roles = "Paciente")
     void deniesAdministrationRoutesToPatient() throws Exception {
         mvc.perform(post("/api/users").with(csrf()).contentType("application/json").content(CREATE))
@@ -113,21 +104,6 @@ class UserControllerTests {
                 .andExpect(status().isForbidden());
         mvc.perform(get("/api/users/123")).andExpect(status().isForbidden());
         verifyNoInteractions(service);
-    }
-
-    @Test
-    @WithMockUser(roles = "Administrador")
-    void csrfEndpointProvidesUsableTokenForSameSession() throws Exception {
-        var tokenResult = mvc.perform(get("/api/csrf"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.headerName").value("X-CSRF-TOKEN"))
-                .andExpect(jsonPath("$.token").isNotEmpty()).andReturn();
-        var csrfToken = (org.springframework.security.web.csrf.CsrfToken)
-                tokenResult.getRequest().getAttribute(org.springframework.security.web.csrf.CsrfToken.class.getName());
-        when(service.create(any())).thenReturn(response());
-        mvc.perform(post("/api/users").session((MockHttpSession) tokenResult.getRequest().getSession())
-                        .header(csrfToken.getHeaderName(), csrfToken.getToken())
-                        .contentType("application/json").content(CREATE))
-                .andExpect(status().isCreated());
     }
 
     private UserResponse response() {

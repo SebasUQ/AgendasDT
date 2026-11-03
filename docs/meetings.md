@@ -23,9 +23,9 @@ propias citas y no puede marcarlas como completadas.
 Para los roles de paciente y odontólogo, `Authentication.getName()` debe ser el correo del usuario
 persistido (se normalizan mayúsculas y espacios). El rol autenticado debe coincidir con el almacenado.
 Una identidad sin correspondencia recibe 403; nunca se acepta el ID enviado en la solicitud como prueba
-de identidad. Este contrato queda listo para el módulo de autenticación; añadir `password_hash` no
-implementa un login. El perfil `demo` conserva su administrador en memoria y su configuración previa.
-Fuera de ese perfil, se conserva CSRF: obtener el token con `GET /api/csrf` y conservar su cookie.
+de identidad. El login de `docs/authentication.md` cumple este contrato: el token lleva el correo
+como identidad y el rol como autoridad. El perfil `demo` conserva su administrador en memoria y su
+configuración previa. Fuera de ese perfil se usa el token en `Authorization: Bearer`, sin CSRF.
 
 ### Creación
 
