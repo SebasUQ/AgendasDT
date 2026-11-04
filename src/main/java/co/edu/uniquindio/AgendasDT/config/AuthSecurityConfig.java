@@ -18,7 +18,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
-@Profile("!demo")
+@Profile("demo")
 public class AuthSecurityConfig {
     @Bean
     public SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
