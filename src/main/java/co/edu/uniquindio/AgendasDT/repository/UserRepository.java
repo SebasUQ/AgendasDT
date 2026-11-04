@@ -14,4 +14,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("select count(u) > 0 from User u where lower(trim(u.email)) = :email and u.id <> :id")
     boolean emailExistsForAnotherUser(@Param("email") String email, @Param("id") Long id);
+
+
 }
