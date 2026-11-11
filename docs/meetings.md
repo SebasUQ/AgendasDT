@@ -10,6 +10,7 @@ Las notificaciones existentes continúan funcionando; el despachador descarta me
 | --- | --- | --- |
 | POST | `/api/meetings` | 201, cita creada y encabezado Location |
 | GET | `/api/meetings/{uuid}` | 200, datos y versión para editar |
+| GET | `/api/meetings/patients/{patientId}/current` | 200, cita Pendiente del paciente; 404 si no tiene |
 | PUT | `/api/meetings/{uuid}` | 200, cita actualizada |
 | GET | `/api/meetings/doctors/{doctorId}?page=0&size=20` | 200, lista paginada de citas asignadas |
 | PATCH | `/api/meetings/{uuid}/status` | 200, cambio de estado |
@@ -51,6 +52,16 @@ El inicio debe ser futuro y el fin estrictamente posterior. No se impone una dur
 
 La cita nace en estado `Pendiente`. El UUID generado también se devuelve como
 `confirmationCode`: es el código único de referencia, no un token que autorice acciones.
+
+Al crear se rechaza con 409 si el paciente ya tiene cualquier cita `Pendiente` o `Confirmada`,
+aunque sea en otro horario. Las canceladas y completadas no bloquean una nueva reserva.
+La comprobación se serializa mediante un bloqueo del paciente dentro de la transacción,
+para evitar que dos solicitudes de creación simultáneas pasen a la vez.
+
+La consulta `/api/meetings/patients/{patientId}/current` devuelve exclusivamente una cita
+`Pendiente`, sin incluir las confirmadas. Si existen varias pendientes antiguas, selecciona la
+de inicio más temprano, con desempate por ID. Un paciente solo puede consultar la propia;
+un odontólogo solo recibe pendientes que tenga asignadas. Se mantienen los permisos existentes.
 
 ### Edición
 

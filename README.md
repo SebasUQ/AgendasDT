@@ -78,7 +78,7 @@ No se usan sesiones, cookies ni CSRF.
 | --- | --- | --- |
 | POST | `/api/users` | Crea usuario, devuelve 201 y encabezado Location |
 | GET | `/api/users/{id}` | Consulta los datos y la versión para editar |
-| PUT | `/api/users/{id}` | Reemplaza los datos editables, devuelve 200 |
+| PATCH / PUT | `/api/users/{id}` | Actualiza solo los campos enviados, devuelve 200 |
 
 Creación:
 
@@ -101,10 +101,11 @@ teléfono: de 7 a 15 dígitos y prefijo `+` opcional. Se conservan ceros inicial
 Fecha de nacimiento en formato ISO, anterior a hoy.
 Roles admitidos: `Administrador`, `Odontologo`, `Recepcionista`, `Paciente`.
 
-Edición: usar los mismos campos excepto `id` y agregar `"version": 0`,
-tomando la versión de la última respuesta de creación o consulta. PUT exige todos los campos;
-para conservar un dato hay que volver a enviarlo. Si otro administrador cambia el usuario,
-se devuelve 409 y el cliente debe volver a consultar antes de reenviar la edición.
+Edición parcial: `PATCH /api/users/{id}` acepta únicamente los campos que se desean cambiar,
+por ejemplo `{"phone":"3007654321"}`. La ruta PUT existente también admite actualización parcial.
+Los campos omitidos o con null conservan su valor; los valores enviados siguen validándose.
+`version` es opcional: si se envía, debe coincidir con la última versión consultada o se devuelve 409.
+Los permisos existentes del módulo de usuarios se mantienen.
 
 El correo se guarda en minúsculas y los nombres se guardan sin espacios en los extremos.
 La búsqueda de duplicados ignora mayúsculas y espacios exteriores de los correos existentes.

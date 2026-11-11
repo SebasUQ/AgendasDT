@@ -36,7 +36,7 @@ class MeetingNotificationWiringTests {
 
     @BeforeEach
     void resources() {
-        when(users.findById(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente, "Ana")));
+        when(users.findByIdForMeetingCreation(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente, "Ana")));
         when(users.findById(2L)).thenReturn(Optional.of(user(2L, UserRol.Odontologo, "Carlos")));
         DentalChair chair = new DentalChair();
         chair.setId(3L);

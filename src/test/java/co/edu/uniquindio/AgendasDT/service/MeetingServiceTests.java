@@ -95,14 +95,14 @@ class MeetingServiceTests {
 
     @Test
     void rejectsNonPatientRole() {
-        when(users.findById(1L)).thenReturn(Optional.of(user(1L, UserRol.Administrador)));
+        when(users.findByIdForMeetingCreation(1L)).thenReturn(Optional.of(user(1L, UserRol.Administrador)));
         assertThrows(InvalidMeetingException.class, () -> service.create(create(start, end)));
         verifyNoInteractions(chairs, audit);
     }
 
     @Test
     void rejectsNonDentistRole() {
-        when(users.findById(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente)));
+        when(users.findByIdForMeetingCreation(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente)));
         when(users.findById(2L)).thenReturn(Optional.of(user(2L, UserRol.Recepcionista)));
         assertThrows(InvalidMeetingException.class, () -> service.create(create(start, end)));
         verifyNoInteractions(chairs, audit);
@@ -110,7 +110,7 @@ class MeetingServiceTests {
 
     @Test
     void rejectsMissingDentist() {
-        when(users.findById(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente)));
+        when(users.findByIdForMeetingCreation(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente)));
         assertThrows(MeetingNotFoundException.class, () -> service.create(create(start, end)));
         verifyNoInteractions(chairs, audit);
     }
@@ -232,12 +232,22 @@ class MeetingServiceTests {
         return new MeetingCreateRequest(1L, 2L, 3L, start, end, " Control ");
     }
 
+    @Test
+    void rejectsAnotherActiveMeetingEvenIfTimeWouldBeFree() {
+        when(users.findByIdForMeetingCreation(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente)));
+        when(meetings.existsByPatient_IdAndStatusIn(1L, List.of(MeetingStatus.Pendiente, MeetingStatus.Confirmada)))
+                .thenReturn(true);
+        assertThrows(MeetingConflictException.class, () -> service.create(create(start.plusDays(1), end.plusDays(1))));
+        verify(meetings, never()).saveAndFlush(any());
+        verifyNoInteractions(chairs, audit, events);
+    }
+
     private MeetingUpdateRequest update(OffsetDateTime start, OffsetDateTime end, Long version) {
         return new MeetingUpdateRequest(2L, 3L, start, end, "Control actualizado", version);
     }
 
     private void userResources() {
-        when(users.findById(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente)));
+        when(users.findByIdForMeetingCreation(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente)));
         when(users.findById(2L)).thenReturn(Optional.of(user(2L, UserRol.Odontologo)));
     }
 

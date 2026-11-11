@@ -22,7 +22,7 @@ public class UserController {
         return ResponseEntity.created(URI.create("/api/users/" + user.id())).body(user);
     }
 
-    @PutMapping("/{id}")
+    @RequestMapping(value = "/{id}", method = {RequestMethod.PUT, RequestMethod.PATCH})
     public UserResponse update(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         return service.update(id, request);
     }

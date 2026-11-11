@@ -8,10 +8,17 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
+    boolean existsByPatient_IdAndStatusIn(Long patientId, Collection<MeetingStatus> statuses);
+
+    Optional<Meeting> findFirstByPatient_IdAndStatusOrderByStartsAtAscIdAsc(Long patientId, MeetingStatus status);
+
+    Optional<Meeting> findFirstByPatient_IdAndDoctor_IdAndStatusOrderByStartsAtAscIdAsc(
+            Long patientId, Long doctorId, MeetingStatus status);
     Page<Meeting> findByDoctor_IdOrderByStartsAtAscIdAsc(Long doctorId, Pageable pageable);
 
     Page<Meeting> findByDoctor_IdAndPatient_IdOrderByStartsAtAscIdAsc(Long doctorId, Long patientId, Pageable pageable);

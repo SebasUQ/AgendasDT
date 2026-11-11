@@ -167,6 +167,31 @@ class UserServiceTests {
                 "ANA@EXAMPLE.COM", "+570123456789", UserRol.Paciente);
     }
 
+    @Test
+    void partialUpdatePreservesOmittedFieldsAndAcceptsMissingVersion() {
+        User user = existingUser();
+        user.setName("Ana"); user.setLastName("Perez"); user.setEmail("ana@example.com");
+        user.setBirthDate(LocalDate.of(1995, 5, 12)); user.setPhone("3001234567"); user.setPasswordHash("hash");
+        when(users.findById(123L)).thenReturn(Optional.of(user));
+        var response = service.update(123L, new UserUpdateRequest(null, null, null, null, "3007654321", null, null));
+        assertEquals("3007654321", response.phone());
+        assertEquals("Ana", response.name()); assertEquals("Perez", response.lastName());
+        assertEquals("ana@example.com", response.email()); assertEquals(UserRol.Paciente, response.rol());
+        assertEquals(LocalDate.of(1995, 5, 12), response.birthDate()); assertEquals("hash", user.getPasswordHash());
+        verify(users, never()).emailExistsForAnotherUser(any(), any());
+    }
+
+    @Test
+    void partialEmailUpdateStillNormalizesAndRejectsDuplicates() {
+        User user = existingUser(); user.setEmail("old@example.com");
+        when(users.findById(123L)).thenReturn(Optional.of(user));
+        when(users.emailExistsForAnotherUser("new@example.com", 123L)).thenReturn(true);
+        assertThrows(UserConflictException.class, () -> service.update(123L,
+                new UserUpdateRequest(null, null, null, "NEW@EXAMPLE.COM", null, null, null)));
+        assertEquals("old@example.com", user.getEmail());
+        verifyNoInteractions(audit);
+    }
+
     private UserUpdateRequest updateRequest(Long version) {
         return new UserUpdateRequest("Ana", "Perez", LocalDate.of(1995, 5, 12),
                 "ANA@EXAMPLE.COM", "+570123456789", UserRol.Odontologo, version);

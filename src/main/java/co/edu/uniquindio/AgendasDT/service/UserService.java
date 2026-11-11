@@ -54,16 +54,21 @@ public class UserService {
 
     public UserResponse update(@Positive Long id, @Valid UserUpdateRequest request) {
         User user = find(id);
-        if (!Objects.equals(user.getVersion(), request.version())) {
+        if (request.version() != null && !Objects.equals(user.getVersion(), request.version())) {
             throw new UserConflictException("El usuario cambió. Consulte sus datos antes de volver a editar.");
         }
-        String email = normalizeEmail(request.email());
-        if (users.emailExistsForAnotherUser(email, id)) {
+        String email = request.email() == null ? null : normalizeEmail(request.email());
+        if (email != null && users.emailExistsForAnotherUser(email, id)) {
             throw new UserConflictException("El correo ya está registrado.");
         }
         UserRol previousRole = user.getRol();
         setPassword(user, request.password());
-        apply(user, request.name(), request.lastName(), request.birthDate(), email, request.phone(), request.rol());
+        if (request.name() != null) { user.setName(request.name().strip()); }
+        if (request.lastName() != null) { user.setLastName(request.lastName().strip()); }
+        if (request.birthDate() != null) { user.setBirthDate(request.birthDate()); }
+        if (email != null) { user.setEmail(email); }
+        if (request.phone() != null) { user.setPhone(request.phone()); }
+        if (request.rol() != null) { user.setRol(request.rol()); }
         users.flush();
         audit.save(new UserAudit(id, actor(), "UPDATE", previousRole, user.getRol()));
         return UserResponse.from(user);

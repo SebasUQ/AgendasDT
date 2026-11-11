@@ -39,6 +39,11 @@ public class MeetingController {
         return service.listByDoctor(doctorId, page, size);
     }
 
+    @GetMapping("/patients/{patientId}/current")
+    public MeetingResponse getCurrentByPatient(@PathVariable @Positive Long patientId) {
+        return service.getCurrentByPatient(patientId);
+    }
+
     @PatchMapping("/{id}/status")
     public MeetingResponse changeStatus(@PathVariable UUID id, @Valid @RequestBody MeetingStatusRequest request) {
         return service.changeStatus(id, request);

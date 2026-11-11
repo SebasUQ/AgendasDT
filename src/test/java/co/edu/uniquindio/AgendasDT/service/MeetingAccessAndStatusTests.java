@@ -206,6 +206,32 @@ class MeetingAccessAndStatusTests {
                 List.of(new SimpleGrantedAuthority("ROLE_" + role.name()))));
     }
 
+    @Test
+    void currentMeetingQueryReturnsPendingForPatient() {
+        User patient = scoped(1L, UserRol.Paciente);
+        when(users.findById(1L)).thenReturn(Optional.of(patient));
+        when(meetings.findFirstByPatient_IdAndStatusOrderByStartsAtAscIdAsc(1L, MeetingStatus.Pendiente))
+                .thenReturn(Optional.of(meeting()));
+        assertEquals(id, service.getCurrentByPatient(1L).id());
+    }
+
+    @Test
+    void currentMeetingQueryDoesNotExposeAnotherPatientsData() {
+        scoped(1L, UserRol.Paciente);
+        assertThrows(AccessDeniedException.class, () -> service.getCurrentByPatient(99L));
+        verifyNoInteractions(meetings);
+    }
+
+    @Test
+    void currentMeetingQueryFiltersDentistAssignments() {
+        scoped(2L, UserRol.Odontologo);
+        when(users.findById(1L)).thenReturn(Optional.of(user(1L, UserRol.Paciente)));
+        assertThrows(co.edu.uniquindio.AgendasDT.exception.MeetingNotFoundException.class,
+                () -> service.getCurrentByPatient(1L));
+        verify(meetings).findFirstByPatient_IdAndDoctor_IdAndStatusOrderByStartsAtAscIdAsc(1L, 2L, MeetingStatus.Pendiente);
+        verify(meetings, never()).findFirstByPatient_IdAndStatusOrderByStartsAtAscIdAsc(any(), any());
+    }
+
     private User scoped(Long id, UserRol role) {
         User actor = user(id, role);
         login("actor@example.com", role);

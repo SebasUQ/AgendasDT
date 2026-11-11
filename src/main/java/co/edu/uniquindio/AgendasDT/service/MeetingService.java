@@ -56,7 +56,15 @@ public class MeetingService {
         Instant start = request.startsAt().toInstant();
         Instant end = request.endsAt().toInstant();
         validateTime(start, end);
-        User patient = userWithRole(request.patientId(), UserRol.Paciente);
+        // Serialize creations for the same patient so two simultaneous requests cannot both pass the check.
+        User patient = users.findByIdForMeetingCreation(request.patientId())
+                .orElseThrow(() -> new MeetingNotFoundException("El usuario indicado no existe."));
+        if (patient.getRol() != UserRol.Paciente) {
+            throw new InvalidMeetingException("El usuario indicado debe tener el rol Paciente.");
+        }
+        if (meetings.existsByPatient_IdAndStatusIn(patient.getId(), RESERVED)) {
+            throw new MeetingConflictException("El paciente ya tiene una cita activa (pendiente o confirmada).");
+        }
         User doctor = userWithRole(request.doctorId(), UserRol.Odontologo);
         DentalChair chair = activeChair(request.chairId());
         validateAvailability(NO_MEETING, patient.getId(), doctor.getId(), chair.getId(), start, end);
@@ -113,6 +121,19 @@ public class MeetingService {
         Meeting meeting = find(id);
         checkAccess(actor, meeting);
         return MeetingResponse.from(meeting);
+    }
+
+    @Transactional(readOnly = true)
+    public MeetingResponse getCurrentByPatient(@NotNull @Positive Long patientId) {
+        User actor = scopedUser();
+        if (actor != null && actor.getRol() == UserRol.Paciente && !actor.getId().equals(patientId)) {
+            throw new AccessDeniedException("Solo puede consultar su propia cita.");
+        }
+        userWithRole(patientId, UserRol.Paciente);
+        var pending = actor != null && actor.getRol() == UserRol.Odontologo
+                ? meetings.findFirstByPatient_IdAndDoctor_IdAndStatusOrderByStartsAtAscIdAsc(patientId, actor.getId(), MeetingStatus.Pendiente)
+                : meetings.findFirstByPatient_IdAndStatusOrderByStartsAtAscIdAsc(patientId, MeetingStatus.Pendiente);
+        return MeetingResponse.from(pending.orElseThrow(() -> new MeetingNotFoundException("El paciente no tiene una cita pendiente.")));
     }
 
     @Transactional(readOnly = true)

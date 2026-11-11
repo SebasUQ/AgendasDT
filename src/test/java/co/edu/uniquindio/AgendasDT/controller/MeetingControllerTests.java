@@ -174,6 +174,21 @@ class MeetingControllerTests {
     }
 
     @Test
+    @WithMockUser(roles = "Paciente")
+    void returnsPatientsPendingMeeting() throws Exception {
+        when(service.getCurrentByPatient(1L)).thenReturn(response());
+        mvc.perform(get("/api/meetings/patients/1/current"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("Pendiente"));
+    }
+
+    @Test
+    @WithMockUser(roles = "Paciente")
+    void returns404WhenPatientHasNoPendingMeeting() throws Exception {
+        when(service.getCurrentByPatient(1L)).thenThrow(new MeetingNotFoundException("El paciente no tiene una cita pendiente."));
+        mvc.perform(get("/api/meetings/patients/1/current")).andExpect(status().isNotFound());
+    }
+
+    @Test
     @WithMockUser(roles = "Odontologo")
     void listsDoctorMeetingsWithPagination() throws Exception {
         when(service.listByDoctor(2L, 0, 20)).thenReturn(new co.edu.uniquindio.AgendasDT.dto.MeetingListResponse(

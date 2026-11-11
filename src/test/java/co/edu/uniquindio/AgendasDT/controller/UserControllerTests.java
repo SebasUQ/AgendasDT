@@ -113,6 +113,28 @@ class UserControllerTests {
 
     @Test
     @WithMockUser(roles = "Administrador")
+    void supportsPartialUpdateWithPatchAndExistingPutRoute() throws Exception {
+        when(service.update(eq(123L), any())).thenReturn(response());
+        mvc.perform(patch("/api/users/123").with(csrf()).contentType("application/json")
+                .content("{\"phone\":\"3007654321\"}"))
+                .andExpect(status().isOk());
+        mvc.perform(put("/api/users/123").with(csrf()).contentType("application/json")
+                .content("{\"name\":\"Ana\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser(roles = "Administrador")
+    void partialUpdateRejectsBlankOrInvalidProvidedValues() throws Exception {
+        mvc.perform(patch("/api/users/123").with(csrf()).contentType("application/json")
+                .content("{\"name\":\"   \",\"email\":\"\",\"phone\":\"abc\"}"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors.name").exists())
+                .andExpect(jsonPath("$.errors.email").exists()).andExpect(jsonPath("$.errors.phone").exists());
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    @WithMockUser(roles = "Administrador")
     void acceptsPasswordWithoutReturningCredentials() throws Exception {
         when(service.create(any())).thenReturn(response());
         mvc.perform(post("/api/users").with(csrf()).contentType("application/json")
