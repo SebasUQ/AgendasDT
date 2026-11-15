@@ -89,7 +89,7 @@ public class AuthService {
                 .build();
         String token = tokens.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
                 .getTokenValue();
-        return new AuthResponse(token, user.getRol(), fullName, user.getEmail(), user.getId(), user.getPhone());
+        return new AuthResponse(token, user.getRol(), fullName, user.getEmail(), user.getId(), user.getPhone(), user.getVersion());
     }
 
     private String unknownUserHash() {

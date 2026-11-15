@@ -51,7 +51,7 @@ public class UserService {
         audit.save(new UserAudit(user.getId(), actor(), "CREATE", null, user.getRol()));
         return UserResponse.from(user);
     }
-
+    @PreAuthorize("hasAnyRole('Administrador','Paciente')")
     public UserResponse update(@Positive Long id, @Valid UserUpdateRequest request) {
         User user = find(id);
         if (request.version() != null && !Objects.equals(user.getVersion(), request.version())) {
