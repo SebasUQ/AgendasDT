@@ -12,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/clinical-history")
+@PreAuthorize("hasAnyRole('Administrador','Odontologo','Paciente')")
 public class ClinicalHistoryController {
 
     private final ClinicalHistoryService service;

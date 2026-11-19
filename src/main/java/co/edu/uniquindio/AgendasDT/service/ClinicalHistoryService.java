@@ -12,11 +12,13 @@ import co.edu.uniquindio.AgendasDT.repository.ClinicalHistoryRepository;
 import co.edu.uniquindio.AgendasDT.repository.TreatmentRepository;
 import co.edu.uniquindio.AgendasDT.repository.UserRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
+@PreAuthorize("hasAnyRole('Administrador','Odontologo','Paciente')")
 public class ClinicalHistoryService {
 
     private final ClinicalHistoryRepository historyRepository;
