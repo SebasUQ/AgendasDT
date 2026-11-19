@@ -74,6 +74,7 @@ public class UserService {
         return UserResponse.from(user);
     }
 
+    @PreAuthorize("hasAnyRole('Administrador','Paciente')")
     @Transactional(readOnly = true)
     public UserResponse get(@Positive Long id) {
         return UserResponse.from(find(id));

@@ -28,6 +28,7 @@ public class UserController {
         return service.update(id, request);
     }
 
+    @PreAuthorize("hasAnyRole('Administrador','Paciente')")
     @GetMapping("/{id}")
     public UserResponse get(@PathVariable Long id) { return service.get(id); }
 }
