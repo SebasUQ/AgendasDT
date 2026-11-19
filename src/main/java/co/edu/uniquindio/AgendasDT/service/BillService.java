@@ -59,6 +59,9 @@ public class BillService {
 
     public BillResponse update(@NotNull UUID id, @Valid BillUpdateRequest request) {
         Bill bill = pending(id, request.version());
+        if (bill.isClinicalOrder()) {
+            throw new InvalidBillException("No se pueden alterar los precios de una orden clínica emitida desde el tarifario.");
+        }
         replaceLines(bill, request.lines(), clock.instant());
         bills.flush();
         recordAudit(bill, "UPDATE");

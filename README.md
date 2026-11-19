@@ -2,6 +2,11 @@
 
 Java 21, Spring Boot, Maven y PostgreSQL. Desarrollo por tareas de Jira.
 
+El módulo del odontólogo (agenda propia, pacientes, historia clínica, odontograma FDI,
+adendas, prescripciones PDF y órdenes de cobro) está documentado en [docs/doctor.md](docs/doctor.md).
+Aplicar `database/008_doctor_clinical_module.sql` después de las migraciones anteriores
+antes de desplegar esta versión; el script no se aplica automáticamente.
+
 La gestión de citas con permisos por rol está documentada en
 [docs/meetings.md](docs/meetings.md).
 La creación, edición y pago de facturas está documentada en [docs/bills.md](docs/bills.md).

@@ -47,7 +47,7 @@ class AuthSecurityTests {
 
     @Test
     void loginIsPublicAndNeedsNoCsrf() throws Exception {
-        when(auth.login(any())).thenReturn(new AuthResponse("token", UserRol.Administrador, "Ana Pérez", "admin@example.com"));
+        when(auth.login(any())).thenReturn(new AuthResponse("token", UserRol.Administrador, "Ana Pérez", "admin@example.com", 1L, null));
         mvc.perform(post("/api/auth/login").contentType("application/json").content(LOGIN))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.token").value("token"))
                 .andExpect(jsonPath("$.rol").value("Administrador"))
@@ -59,7 +59,7 @@ class AuthSecurityTests {
 
     @Test
     void registerIsPublicAndCreatesPatient() throws Exception {
-        when(auth.register(any())).thenReturn(new AuthResponse("token", UserRol.Paciente, "Luis Gómez", "luis@example.com"));
+        when(auth.register(any())).thenReturn(new AuthResponse("token", UserRol.Paciente, "Luis Gómez", "luis@example.com", 2L, null));
         mvc.perform(post("/api/auth/register").contentType("application/json").content(REGISTER))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.rol").value("Paciente"));
     }

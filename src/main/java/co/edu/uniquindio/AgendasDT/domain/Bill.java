@@ -37,6 +37,9 @@ public class Bill {
     @Column(name = "Total", nullable = false, precision = 15, scale = 2)
     private BigDecimal total;
 
+    @Column(name = "clinical_order", nullable = false)
+    private boolean clinicalOrder;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "Status", nullable = false)
     private BillStatus status;

@@ -13,6 +13,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface MeetingRepository extends JpaRepository<Meeting, UUID> {
+    boolean existsByDoctor_IdAndPatient_IdAndStatusNot(Long doctorId, Long patientId, MeetingStatus status);
+
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select m from Meeting m where m.id = :id")
+    Optional<Meeting> lockForConsultation(@Param("id") UUID id);
+
+    @Query("select m from Meeting m where m.doctor.id = :doctorId and m.startsAt >= :from and m.startsAt < :to and m.status in :statuses")
+    Page<Meeting> findDoctorAgenda(@Param("doctorId") Long doctorId, @Param("from") Instant from,
+            @Param("to") Instant to, @Param("statuses") Collection<MeetingStatus> statuses, Pageable pageable);
     boolean existsByPatient_IdAndStatusIn(Long patientId, Collection<MeetingStatus> statuses);
 
     Optional<Meeting> findFirstByPatient_IdAndStatusOrderByStartsAtAscIdAsc(Long patientId, MeetingStatus status);

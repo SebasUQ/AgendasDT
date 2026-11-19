@@ -37,6 +37,9 @@ public class BillDetail {
     @Column(name = "SubTotal", nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotal;
 
+    @Column(name = "procedure_id")
+    private UUID procedureId;
+
     //Constructor vacio
     public BillDetail() {
 

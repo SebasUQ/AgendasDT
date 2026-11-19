@@ -15,6 +15,10 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(ClinicalException.class)
+    public ProblemDetail clinical(ClinicalException ex) {
+        return ProblemDetail.forStatusAndDetail(ex.getStatus(), ex.getMessage());
+    }
     @ExceptionHandler(InvalidCredentialsException.class)
     public ProblemDetail invalidCredentials(InvalidCredentialsException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());

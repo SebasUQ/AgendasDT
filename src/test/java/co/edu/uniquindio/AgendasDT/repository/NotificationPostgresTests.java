@@ -35,7 +35,7 @@ class NotificationPostgresTests {
             sql.execute("CREATE SCHEMA " + schema);
             sql.execute("SET search_path TO " + schema + ", public");
             for (String migration : List.of("001_users.sql", "002_meetings_structure.sql",
-                    "003_meetings_constraints.sql", "005_notifications.sql", "007_user_passwords_meeting_access.sql")) {
+                    "003_meetings_constraints.sql", "004_bills.sql", "005_notifications.sql", "007_user_passwords_meeting_access.sql", "008_doctor_clinical_module.sql")) {
                 sql.execute(Files.readString(Path.of("database", migration)));
             }
         }
